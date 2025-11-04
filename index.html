@@ -6,18 +6,13 @@
   <title>감성 앨범 · 8 Photos</title>
   <style>
     :root{
-      --bg:#0f0f10;
-      --card:#17181a;
-      --ink:#e9ecef;
-      --muted:#a0a4ab;
-      --line:#26282c;
-      --accent:#e8d4b0;
+      --bg:#0f0f10; --card:#17181a; --ink:#e9ecef; --muted:#a0a4ab; --line:#26282c;
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Pretendard,Arial,Helvetica,sans-serif}
 
-    /* 배경 두 장 */
+    /* 페이지 배경 2장(크로스페이드) */
     .bgwrap{position:fixed;inset:0;z-index:-1;}
     .bgwrap .bg{position:absolute;inset:0;background-position:center;background-size:cover;
       opacity:0;transition:opacity 1.2s ease;filter:brightness(.9) contrast(1.03) saturate(1.02);}
@@ -33,44 +28,55 @@
     .card{background:var(--card);border:1px solid var(--line);
       border-radius:18px;overflow:hidden;box-shadow:0 6px 16px rgba(0,0,0,.25)}
 
-    /* 프레임 + 기울임 */
-    .polaroid{padding:12px 12px 16px;background:#111214cc;border-radius:16px;
-      border:1px solid var(--line);box-shadow:0 10px 26px rgba(0,0,0,.35);}
-    .polaroid__inner{background:#0b0c0e;border-radius:12px;overflow:hidden;
-      border:1px solid #2a2c31;transform:rotate(var(--rot,0deg));
-      transform-origin:center;transition:transform .25s ease,box-shadow .25s ease;
-      box-shadow:0 5px 14px rgba(0,0,0,.3);}
-    .polaroid__inner:hover{box-shadow:0 12px 24px rgba(0,0,0,.5);}
-    .polaroid__inner img{width:100%;height:100%;display:block;object-fit:cover;aspect-ratio:4/5;}
-    .cap{padding:12px 14px 14px}
-    .cap h3{margin:0 0 4px;font-size:15px}
-    .cap p{margin:0;color:var(--muted);font-size:12.5px}
+    /* 카드 본문: 배경 위에 사진(모바일 9:16 비율) */
+    .cardBox{
+      position:relative;
+      width:100%;
+      aspect-ratio:9/16;          /* 모바일 세로 화면 비율 */
+      background-image:var(--bgimg);
+      background-size:cover;background-position:center;
+      filter:brightness(.95) saturate(1.02);
+    }
+    /* 사진만 기울기 적용 + 프레임 동기 회전 */
+    .photoWrap{
+      position:absolute;left:50%;top:50%;
+      width:min(80%, 420px);      /* 사진 크기(배경 대비 축소) */
+      transform:translate(-50%, -50%) rotate(var(--rot,0deg));
+      transform-origin:center;
+    }
+    .photoWrap img{
+      width:100%;height:auto;display:block;object-fit:cover;border-radius:12px;
+      box-shadow:0 10px 26px rgba(0,0,0,.35);
+    }
+    .photoWrap .frame{
+      position:absolute;inset:-8px;               /* 프레임 여백 */
+      border:2px solid rgba(255,255,255,.85);
+      border-radius:16px;pointer-events:none;
+      box-shadow:0 0 0 1px rgba(0,0,0,.15) inset;
+    }
 
-    /* 전체화면 뷰어 */
+    /* 전체화면 뷰어(설명/힌트 제거) */
     .viewer{position:fixed;inset:0;background:rgba(8,8,10,.96);display:none;
       align-items:center;justify-content:center;z-index:50}
     .viewer.open{display:flex}
     .viewer__imgwrap{position:relative;width:100vw;height:100vh;overflow:hidden;touch-action:none}
     .viewer__img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
       max-width:100vw;max-height:100vh;object-fit:contain;transition:transform .25s ease}
-    .viewer__top,.viewer__bot{position:absolute;left:0;right:0;padding:10px 12px;
-      display:flex;align-items:center;justify-content:space-between;pointer-events:none}
-    .viewer__top{top:0;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent)}
-    .viewer__bot{bottom:0;background:linear-gradient(0deg,rgba(0,0,0,.45),transparent)}
+    .viewer__top{position:absolute;left:0;right:0;top:0;padding:10px 12px;
+      display:flex;align-items:center;justify-content:space-between;pointer-events:none;
+      background:linear-gradient(180deg,rgba(0,0,0,.45),transparent)}
     .chip{pointer-events:auto;border:1px solid var(--line);background:rgba(32,33,36,.7);
-      color:var(--ink);padding:8px 11px;border-radius:999px;font-size:12.5px;
-      display:inline-flex;gap:8px;align-items:center}
+      color:var(--ink);padding:8px 11px;border-radius:999px;font-size:12.5px;display:inline-flex;gap:8px;align-items:center}
     .index{pointer-events:auto;margin-left:auto}
     .navZone{position:absolute;top:0;bottom:0;width:32%;}
     .navPrev{left:0}
     .navNext{right:0}
     .swiping .viewer__img{transition:none}
     body.lock{overflow:hidden;touch-action:none}
-    @media(min-width:640px){.album{grid-template-columns:1fr 1fr}}
   </style>
 </head>
 <body>
-  <!-- 배경 2장 -->
+  <!-- 페이지 배경 2장 -->
   <div class="bgwrap" aria-hidden="true">
     <div class="bg" id="bg1"></div>
     <div class="bg" id="bg2"></div>
@@ -78,11 +84,12 @@
 
   <header>
     <h1>감성 앨범</h1>
-    <p>가볍게 스크롤하고, 탭하면 꽉 채워 보기 · 좌우 스와이프로 넘기기</p>
+    <p>배경 위에 사진을 올려두고 · 탭하면 전체화면 · 좌우 스와이프</p>
   </header>
 
   <main class="album" id="album"></main>
 
+  <!-- 전체화면 뷰어 -->
   <section class="viewer" id="viewer" aria-hidden="true">
     <div class="viewer__imgwrap" id="imgWrap">
       <img id="big" class="viewer__img" alt="큰 이미지" />
@@ -90,29 +97,20 @@
         <button class="chip" id="closeBtn" aria-label="닫기">닫기</button>
         <span class="chip index" id="counter">1 / 8</span>
       </div>
-      <div class="viewer__bot">
-        <span class="chip" id="caption">캡션</span>
-        <span class="chip" id="hint">좌우 스와이프 · 더블탭 확대</span>
-      </div>
       <div class="navZone navPrev" id="zonePrev"></div>
       <div class="navZone navNext" id="zoneNext"></div>
     </div>
   </section>
 
   <script>
+    /* 파일을 index.html과 같은 폴더에 둔 버전 */
     const images = [
-      {src:'01.jpg',title:'장면 1',text:'햇살이 머무른 오후의 골목'},
-      {src:'02.jpg',title:'장면 2',text:'바람이 지나가 남긴 파문'},
-      {src:'03.jpg',title:'장면 3',text:'창가에 내려앉은 고요'},
-      {src:'04.jpg',title:'장면 4',text:'멀리 번진 불빛의 숨결'},
-      {src:'05.jpg',title:'장면 5',text:'비에 젖은 도로의 노래'},
-      {src:'06.jpg',title:'장면 6',text:'한 발 늦은 저녁 인사'},
-      {src:'07.jpg',title:'장면 7',text:'천천히 흐르는 장면들'},
-      {src:'08.jpg',title:'장면 8',text:'끝나지 않는 여운'}
+      {src:'01.jpg'},{src:'02.jpg'},{src:'03.jpg'},{src:'04.jpg'},
+      {src:'05.jpg'},{src:'06.jpg'},{src:'07.jpg'},{src:'08.jpg'}
     ];
-    const backgrounds=['bg1.jpg','bg2.jpg'];
+    const backgrounds = ['bg1.jpg','bg2.jpg']; // 페이지 배경(크로스페이드) + 각 카드 배경에도 번갈아 사용
 
-    // 배경 전환
+    /* 페이지 배경 전환 */
     const bg1=document.getElementById('bg1');
     const bg2=document.getElementById('bg2');
     let bgIndex=0,bgShowing=0;
@@ -126,29 +124,27 @@
     bg1.classList.add('show');
     setInterval(()=>{if(backgrounds.length>1)applyBg();},10000);
 
-    // 카드 리스트
+    /* 카드 리스트: 배경 위에 사진(사진만 회전) */
     const album=document.getElementById('album');
     const randTilt=()=>{const ang=30+Math.random()*15;const sign=Math.random()<.5?-1:1;return +(ang*sign).toFixed(1);}
     album.innerHTML=images.map((it,idx)=>{
       const rot=randTilt();
+      const bgurl = backgrounds[idx%backgrounds.length] || backgrounds[0] || '';
       return `
       <article class="card" data-idx="${idx}">
-        <div class="polaroid">
-          <div class="polaroid__inner" style="--rot:${rot}deg">
-            <a class="thumb" href="#" aria-label="${it.title} 크게 보기">
-              <img loading="lazy" decoding="async" src="${it.src}" alt="${it.title}">
-            </a>
+        <div class="cardBox" style="--bgimg:url('${bgurl}')">
+          <div class="photoWrap" style="--rot:${rot}deg">
+            <img loading="lazy" decoding="async" src="${it.src}" alt="photo ${idx+1}">
+            <span class="frame"></span>
           </div>
         </div>
-        <div class="cap"><h3>${it.title}</h3><p>${it.text}</p></div>
       </article>`;
     }).join('');
 
-    // 뷰어
+    /* 전체화면 뷰어 */
     const viewer=document.getElementById('viewer');
     const big=document.getElementById('big');
     const counter=document.getElementById('counter');
-    const caption=document.getElementById('caption');
     const closeBtn=document.getElementById('closeBtn');
     const zonePrev=document.getElementById('zonePrev');
     const zoneNext=document.getElementById('zoneNext');
@@ -166,10 +162,8 @@
       document.body.classList.remove('lock');isOpen=false;scale=1;applyScale();
     };
     const updateBig=()=>{
-      const item=images[current];
-      big.src=item.src;big.alt=item.title;
+      big.src=images[current].src;
       counter.textContent=`${current+1} / ${images.length}`;
-      caption.textContent=item.text||'';
     };
     const go=(dir)=>{
       current=(current+dir+images.length)%images.length;
@@ -182,16 +176,22 @@
       preload(images[p].src);preload(images[n].src);
     };
 
+    /* 썸네일 클릭 → 열기 */
     album.addEventListener('click',(e)=>{
       const card=e.target.closest('.card');
       if(!card)return;
       e.preventDefault();
       openViewer(+card.dataset.idx);
     });
+
+    /* 닫기 버튼 → 뷰어 종료 */
     closeBtn.addEventListener('click',closeViewer);
+
+    /* 좌우 터치/클릭 네비게이션 */
     zonePrev.addEventListener('click',()=>go(-1));
     zoneNext.addEventListener('click',()=>go(1));
 
+    /* 스와이프 제스처 */
     let startX=0,lastX=0,swiping=false;
     imgWrap.addEventListener('touchstart',(e)=>{
       if(e.touches.length>1)return;
@@ -210,13 +210,16 @@
       if(Math.abs(dx)>60)go(dx<0?1:-1);
     });
 
+    /* 더블탭 확대(안내 문구 없음) */
     let lastTap=0;
-    imgWrap.addEventListener('touchend',(e)=>{
+    imgWrap.addEventListener('touchend',()=>{
       const now=Date.now();
       if(now-lastTap<280){scale=(scale===1)?2.1:1;applyScale();}
       lastTap=now;
     });
     const applyScale=()=>{big.style.transform=`translate(-50%,-50%) scale(${scale})`;};
+
+    /* 키보드(데스크톱) */
     window.addEventListener('keydown',(e)=>{
       if(!isOpen)return;
       if(e.key==='Escape')closeViewer();
