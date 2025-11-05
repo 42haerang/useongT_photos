@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>감성 앨범 · 8 Photos</title>
+  <title>느좋 송우성T 화보집</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{
@@ -33,7 +33,7 @@
     }
     .photoWrap{
       position:absolute;left:50%;top:50%;
-      width:min(80%,420px);
+      width:min(72%,420px);
       transform:translate(-50%,-50%) rotate(var(--rot));
     }
     .photoWrap img{
@@ -71,7 +71,7 @@
   </div>
 
   <header>
-    <h1>감성 앨범</h1>
+    <h1>느좋 송우성T 화보집</h1>
   </header>
 
   <main class="album" id="album"></main>
@@ -108,7 +108,7 @@
     /* 카드 생성: 기울기 번갈아 */
     const album=document.getElementById('album');
     album.innerHTML=images.map((it,idx)=>{
-      const rot=(idx%2===0?'-':'')+(30+Math.random()*10).toFixed(1)+'deg';
+      const rot=(idx%2===0?'-':'')+(17+Math.random()*10).toFixed(1)+'deg';
       const bgurl=backgrounds[idx%backgrounds.length];
       return `
         <article class="card" data-idx="${idx}">
@@ -158,14 +158,3 @@
       big.style.transform=`translate(-50%,-50%) scale(${scale})`;
       if(Math.abs(dx)>60)go(dx<0?1:-1);
     });
-
-    /* 더블탭 확대 */
-    let lastTap=0;
-    imgWrap.addEventListener('touchend',()=>{
-      const now=Date.now();
-      if(now-lastTap<280){scale=(scale===1)?2.1:1;applyScale();}
-      lastTap=now;
-    });
-  </script>
-</body>
-</html>
