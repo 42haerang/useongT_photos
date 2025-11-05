@@ -93,22 +93,28 @@
     const images=[...Array(8)].map((_,i)=>({src:`${String(i+1).padStart(2,'0')}.jpg`}));
     const backgrounds=[...Array(8)].map((_,i)=>`bg${i+1}.jpg`);
 
-    /* 배경 크로스페이드 */
+    /* 배경 크로스페이드 (첫 전환부터 bg2가 보이도록 bgIndex=1로 시작) */
     const bg1=document.getElementById('bg1'), bg2=document.getElementById('bg2');
-    let bgIndex=0,bgShowing=0;
+    let bgIndex=1, bgShowing=0;
     const applyBg=()=>{
       const next=backgrounds[bgIndex%backgrounds.length];
-      if(bgShowing===0){bg2.style.backgroundImage=`url(${next})`;bg2.classList.add('show');bg1.classList.remove('show');bgShowing=1;}
-      else{bg1.style.backgroundImage=`url(${next})`;bg1.classList.add('show');bg2.classList.remove('show');bgShowing=0;}
+      if(bgShowing===0){
+        bg2.style.backgroundImage=`url(${next})`;
+        bg2.classList.add('show'); bg1.classList.remove('show'); bgShowing=1;
+      }else{
+        bg1.style.backgroundImage=`url(${next})`;
+        bg1.classList.add('show'); bg2.classList.remove('show'); bgShowing=0;
+      }
       bgIndex++;
     };
-    bg1.style.backgroundImage=`url(${backgrounds[0]})`;bg1.classList.add('show');
-    setInterval(()=>applyBg(),10000);
+    bg1.style.backgroundImage=`url(${backgrounds[0]})`;
+    bg1.classList.add('show');
+    setInterval(applyBg, 10000);
 
-    /* 카드 생성: 기울기 번갈아 */
+    /* 카드 생성: 기울기 좌/우 번갈아, 각도 고정 17deg */
     const album=document.getElementById('album');
     album.innerHTML=images.map((it,idx)=>{
-      const rot=(idx%2===0?'-':'')+(17+Math.random()*10).toFixed(1)+'deg';
+      const rot=(idx%2===0?'-':'') + '17deg';   // ★ 여기서 각도 고정
       const bgurl=backgrounds[idx%backgrounds.length];
       return `
         <article class="card" data-idx="${idx}">
@@ -122,19 +128,36 @@
     }).join('');
 
     /* 전체화면 뷰어 */
-    const viewer=document.getElementById('viewer'),big=document.getElementById('big'),
-          counter=document.getElementById('counter'),closeBtn=document.getElementById('closeBtn'),
-          zonePrev=document.getElementById('zonePrev'),zoneNext=document.getElementById('zoneNext'),
+    const viewer=document.getElementById('viewer'),
+          big=document.getElementById('big'),
+          counter=document.getElementById('counter'),
+          closeBtn=document.getElementById('closeBtn'),
+          zonePrev=document.getElementById('zonePrev'),
+          zoneNext=document.getElementById('zoneNext'),
           imgWrap=document.getElementById('imgWrap');
-    let current=0,isOpen=false,scale=1;
-    const openViewer=i=>{current=i;update();viewer.classList.add('open');document.body.classList.add('lock');isOpen=true;};
-    const closeViewer=()=>{viewer.classList.remove('open');document.body.classList.remove('lock');isOpen=false;scale=1;applyScale();};
-    const update=()=>{big.src=images[current].src;counter.textContent=`${current+1}/8`;};
-    const go=d=>{current=(current+d+8)%8;scale=1;applyScale();update();};
-    const applyScale=()=>{big.style.transform=`translate(-50%,-50%) scale(${scale})`;};
+
+    let current=0, isOpen=false, scale=1;
+
+    const openViewer=i=>{
+      current=i; update();
+      viewer.classList.add('open'); document.body.classList.add('lock'); isOpen=true;
+    };
+    const closeViewer=()=>{
+      viewer.classList.remove('open'); document.body.classList.remove('lock');
+      isOpen=false; scale=1; applyScale();
+    };
+    const update=()=>{
+      big.src=images[current].src;
+      counter.textContent=`${current+1} / ${images.length}`;
+    };
+    const go=d=>{
+      current=(current+d+images.length)%images.length;
+      scale=1; applyScale(); update();
+    };
+    const applyScale=()=>{ big.style.transform=`translate(-50%,-50%) scale(${scale})`; };
 
     album.addEventListener('click',e=>{
-      const c=e.target.closest('.card');if(!c)return;
+      const c=e.target.closest('.card'); if(!c) return;
       openViewer(+c.dataset.idx);
     });
     closeBtn.onclick=closeViewer;
@@ -142,19 +165,22 @@
     zoneNext.onclick=()=>go(1);
 
     /* 스와이프 */
-    let startX=0,lastX=0,swiping=false;
+    let startX=0, lastX=0, swiping=false;
     imgWrap.addEventListener('touchstart',e=>{
-      if(e.touches.length>1)return;
-      startX=lastX=e.touches[0].clientX;swiping=true;viewer.classList.add('swiping');
+      if(e.touches.length>1) return;
+      startX=lastX=e.touches[0].clientX; swiping=true; viewer.classList.add('swiping');
     },{passive:true});
     imgWrap.addEventListener('touchmove',e=>{
-      if(!swiping)return;
-      const x=e.touches[0].clientX,dx=x-startX;lastX=x;
+      if(!swiping) return;
+      const x=e.touches[0].clientX, dx=x-startX; lastX=x;
       big.style.transform=`translate(calc(-50% + ${dx}px), -50%) scale(${scale})`;
     },{passive:true});
     imgWrap.addEventListener('touchend',()=>{
-      if(!swiping)return;
-      const dx=lastX-startX;viewer.classList.remove('swiping');swiping=false;
+      if(!swiping) return;
+      const dx=lastX-startX; viewer.classList.remove('swiping'); swiping=false;
       big.style.transform=`translate(-50%,-50%) scale(${scale})`;
-      if(Math.abs(dx)>60)go(dx<0?1:-1);
+      if(Math.abs(dx)>60) go(dx<0?1:-1);
     });
+  </script>
+</body>
+</html>
