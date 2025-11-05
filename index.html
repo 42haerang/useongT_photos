@@ -25,16 +25,20 @@
     .album{display:grid;gap:16px;padding:16px}
     .card{border-radius:16px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.3)}
 
+    /* 카드: 배경 위에 사진(모바일 9:16) */
     .cardBox{
       position:relative;width:100%;aspect-ratio:9/16;
       background-image:var(--bgimg);
       background-size:cover;background-position:center;
       filter:brightness(.95) saturate(1.02);
     }
+    /* 사진 크기/각도: 카드별 CSS 변수 적용 */
     .photoWrap{
       position:absolute;left:50%;top:50%;
-      width:min(72%,420px);
+      /* 각 사진별 size 값 적용 (기본 1) */
+      width:min(calc(var(--size,1)*80%), calc(var(--size,1)*420px));
       transform:translate(-50%,-50%) rotate(var(--rot));
+      transform-origin:center;
     }
     .photoWrap img{
       width:100%;height:auto;display:block;border-radius:12px;
@@ -89,13 +93,23 @@
   </section>
 
   <script>
-    /* 사진/배경 1~8 준비 */
-    const images=[...Array(8)].map((_,i)=>({src:`${String(i+1).padStart(2,'0')}.jpg`}));
+    /* 8장: src와 size(개별 크기) 지정 — size는 1이 기본, 0.7~0.95 추천 */
+    const images = [
+      {src:'01.jpg', size:0.85},
+      {src:'02.jpg', size:0.90},
+      {src:'03.jpg', size:0.78},
+      {src:'04.jpg', size:0.80},
+      {src:'05.jpg', size:0.75},
+      {src:'06.jpg', size:0.88},
+      {src:'07.jpg', size:0.83},
+      {src:'08.jpg', size:0.92}
+    ];
+    /* 배경: bg1~bg8 순환 */
     const backgrounds=[...Array(8)].map((_,i)=>`bg${i+1}.jpg`);
 
-    /* 배경 크로스페이드 (첫 전환부터 bg2가 보이도록 bgIndex=1로 시작) */
+    /* 페이지 배경 크로스페이드 */
     const bg1=document.getElementById('bg1'), bg2=document.getElementById('bg2');
-    let bgIndex=1, bgShowing=0;
+    let bgIndex=1, bgShowing=0; // 첫 전환부터 bg2가 다음 이미지
     const applyBg=()=>{
       const next=backgrounds[bgIndex%backgrounds.length];
       if(bgShowing===0){
@@ -111,15 +125,15 @@
     bg1.classList.add('show');
     setInterval(applyBg, 10000);
 
-    /* 카드 생성: 기울기 좌/우 번갈아, 각도 고정 17deg */
+    /* 카드: 각도는 ±17deg 고정, 좌/우 번갈아 + 개별 size 적용 */
     const album=document.getElementById('album');
     album.innerHTML=images.map((it,idx)=>{
-      const rot=(idx%2===0?'-':'') + '17deg';   // ★ 여기서 각도 고정
+      const rot=(idx%2===0?'-':'') + '17deg';
       const bgurl=backgrounds[idx%backgrounds.length];
       return `
         <article class="card" data-idx="${idx}">
           <div class="cardBox" style="--bgimg:url('${bgurl}')">
-            <div class="photoWrap" style="--rot:${rot}">
+            <div class="photoWrap" style="--rot:${rot}; --size:${it.size}">
               <img src="${it.src}" alt="photo${idx+1}">
               <span class="frame"></span>
             </div>
