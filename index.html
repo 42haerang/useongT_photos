@@ -4,12 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <title>느좋 송우성T 화보집</title>
-
-  <!-- 소셜 미리보기(원하는 이미지 경로로 변경) -->
   <meta property="og:title" content="느좋 송우성T 화보집">
-  <meta property="og:description" content="한 장씩 넘겨보는 감성 화보 앨범">
-  <meta property="og:image" content="cover_og.jpg">
-  <meta property="og:type" content="website">
 
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
@@ -17,59 +12,81 @@
       height:100%;
       background:#0f0f10;color:#e9ecef;
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Pretendard,Arial,sans-serif;
-      overflow:hidden;
+      overflow:hidden; /* 세로 스크롤 제거 */
     }
 
-    /* 페이지 배경 크로스페이드 */
+    /* 페이지 배경 크로스페이드(그대로 유지) */
     .bgwrap{position:fixed;inset:0;z-index:-1;}
-    .bgwrap .bg{
-      position:absolute;inset:0;background-size:cover;background-position:center;
-      opacity:0;transition:opacity 1.2s ease;filter:brightness(.9) contrast(1.03) saturate(1.02);
-    }
+    .bgwrap .bg{position:absolute;inset:0;background-size:cover;background-position:center;
+      opacity:0;transition:opacity 1.2s ease;filter:brightness(.9) contrast(1.03) saturate(1.02);}
     .bgwrap .bg.show{opacity:.9}
 
-    header{
-      position:fixed;top:0;left:0;right:0;padding:14px 16px;
-      background:rgba(15,15,16,.6);backdrop-filter:blur(8px);
-      border-bottom:1px solid #26282c;z-index:10;display:flex;align-items:center;gap:8px
-    }
-    header h1{font-size:18px;font-weight:600}
-    .chip{margin-left:auto;border:1px solid #26282c;background:rgba(32,33,36,.7);color:#e9ecef;
-      padding:7px 10px;border-radius:999px;font-size:12.5px}
+    header{position:sticky;top:0;padding:18px 16px 10px;
+      background:rgba(15,15,16,.7);backdrop-filter:blur(8px);
+      border-bottom:1px solid #26282c;z-index:10}
+    header h1{margin:0;font-size:20px}
 
-    /* 가로 슬라이더 */
-    .stage{position:relative;width:100vw;height:100vh;overflow:hidden}
-    .slides{
-      display:flex;width:100%;height:100%;
-      transition:transform .6s ease;
-      touch-action:pan-y; /* 세로 스크롤 제스처 무시(가로 스와이프 안정화) */
+    /* 앨범을 가로 슬라이더로 변경 */
+    .album{
+      display:flex; /* 가로 배치 */
+      gap:0;        /* 카드 간 간격 제거: 한 화면에 한 장 */
+      height:100vh;
+      will-change: transform;
+      transition: transform .6s ease;
+      touch-action: pan-y; /* 가로 스와이프 안정화 */
     }
-    .slide{
-      min-width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;
-      padding-top:60px; /* 헤더 공간 */
-    }
+    .dragging .album{transition:none;} /* 드래그 중 스냅 끔 */
 
-    /* 표지 */
-    .cover h2{font-size:32px;letter-spacing:1px}
-    .cover p{margin-top:10px;color:#c9c9c9}
-
-    /* 사진 프레임 */
-    .photo{
-      max-width:92vw;max-height:78vh;position:relative;transform:translateZ(0);
-      border-radius:16px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.35);
+    /* 각 카드를 화면 전체로 (기존 기울기/프레임 유지) */
+    .card{
+      flex:0 0 100vw;        /* 한 장 = 한 화면 */
+      height:100vh;
+      border-radius:0;       /* 풀스크린 */
+      overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
     }
-    .photo img{
-      display:block;width:100%;height:100%;object-fit:contain;background:#0b0b0c;
+    .cardBox{
+      position:relative;width:100%;height:100%;
+      background-image:var(--bgimg);
+      background-size:cover;background-position:center;
+      filter:brightness(.95) saturate(1.02);
+    }
+    .photoWrap{
+      position:absolute;left:50%;top:50%;
+      width:min(calc(var(--size,1)*80%), calc(var(--size,1)*420px));
+      transform:translate(-50%,-50%) rotate(var(--rot));
+      transform-origin:center;
+    }
+    .photoWrap img{
+      width:100%;height:auto;display:block;border-radius:12px;
+      box-shadow:0 10px 26px rgba(0,0,0,.35);
       user-select:none;-webkit-user-drag:none;
     }
-    .frame{position:absolute;inset:-6px;border:2px solid rgba(255,255,255,.85);border-radius:16px;pointer-events:none}
+    .photoWrap .frame{
+      position:absolute;inset:-6px;border:2px solid rgba(255,255,255,.85);
+      border-radius:16px;pointer-events:none;
+    }
 
-    /* 드래그 중 스냅 끄기 */
-    .grabbing .slides{transition:none}
+    /* 전체화면 뷰어(기존 그대로) */
+    .viewer{position:fixed;inset:0;background:rgba(8,8,10,.96);
+      display:none;align-items:center;justify-content:center;z-index:50}
+    .viewer.open{display:flex}
+    .viewer__imgwrap{position:relative;width:100vw;height:100vh;overflow:hidden;touch-action:none}
+    .viewer__img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+      max-width:100vw;max-height:100vh;object-fit:contain;transition:transform .25s ease}
+    .viewer__top{position:absolute;left:0;right:0;top:0;padding:10px 12px;
+      display:flex;align-items:center;justify-content:space-between;
+      background:linear-gradient(180deg,rgba(0,0,0,.45),transparent)}
+    .chip{border:1px solid #26282c;background:rgba(32,33,36,.7);color:#e9ecef;
+      padding:8px 11px;border-radius:999px;font-size:12.5px}
+    .index{margin-left:auto}
+    .navZone{position:absolute;top:0;bottom:0;width:32%;}
+    .navPrev{left:0}.navNext{right:0}
+    .swiping .viewer__img{transition:none}
+    body.lock{overflow:hidden;touch-action:none}
   </style>
 </head>
 <body>
-  <!-- 배경 -->
   <div class="bgwrap">
     <div class="bg" id="bg1"></div>
     <div class="bg" id="bg2"></div>
@@ -77,144 +94,158 @@
 
   <header>
     <h1>느좋 송우성T 화보집</h1>
-    <span class="chip" id="counter">1 / 1</span>
   </header>
 
   <main class="stage">
-    <section class="slides" id="slides">
-      <!-- JS에서 표지 + 사진 슬라이드 생성 -->
-    </section>
+    <div class="album" id="album"></div>
   </main>
 
+  <!-- 기존 전체화면 뷰어 그대로 유지 -->
+  <section class="viewer" id="viewer">
+    <div class="viewer__imgwrap" id="imgWrap">
+      <img id="big" class="viewer__img" alt="큰 이미지">
+      <div class="viewer__top">
+        <button class="chip" id="closeBtn">닫기</button>
+        <span class="chip index" id="counter">1 / 8</span>
+      </div>
+      <div class="navZone navPrev" id="zonePrev"></div>
+      <div class="navZone navNext" id="zoneNext"></div>
+    </div>
+  </section>
+
   <script>
-    /* ===== 설정 ===== */
-
-    // 사진 목록 (size는 개별 확대계수, 1 기준 / 0.7~1.0 추천)
+    /* 원래 쓰던 세팅 유지 */
     const images = [
-      {src:'01.jpg', size:0.90},
-      {src:'02.jpg', size:0.92},
-      {src:'03.jpg', size:0.85},
-      {src:'04.jpg', size:0.88},
-      {src:'05.jpg', size:0.90},
-      {src:'06.jpg', size:0.87},
-      {src:'07.jpg', size:0.90},
-      {src:'08.jpg', size:0.95}
+      {src:'01.jpg', size:0.85},
+      {src:'02.jpg', size:0.90},
+      {src:'03.jpg', size:0.78},
+      {src:'04.jpg', size:0.80},
+      {src:'05.jpg', size:0.82},
+      {src:'06.jpg', size:0.88},
+      {src:'07.jpg', size:0.83},
+      {src:'08.jpg', size:0.92}
     ];
+    const backgrounds=[...Array(8)].map((_,i)=>`bg${i+1}.jpg`);
 
-    // 배경 이미지 (표지 포함 개수에 맞춰 순환)
-    const backgrounds = ['bg1.jpg','bg2.jpg','bg3.jpg','bg4.jpg','bg5.jpg','bg6.jpg','bg7.jpg','bg8.jpg'];
-
-    // 표지 텍스트
-    const cover = {
-      title: '느좋 송우성T 화보집',
-      desc: '한 장씩 넘겨보는 슬라이드북'
-    };
-
-    /* ===== DOM ===== */
-    const slidesEl = document.getElementById('slides');
-    const counterEl = document.getElementById('counter');
-    const bg1 = document.getElementById('bg1');
-    const bg2 = document.getElementById('bg2');
-
-    /* ===== 슬라이드 구성: 표지 + 사진들 ===== */
-    const createCoverSlide = () => `
-      <article class="slide cover" data-type="cover">
-        <h2>${cover.title}</h2>
-        <p>${cover.desc}</p>
-      </article>
-    `;
-
-    const createPhotoSlide = (it, idx) => `
-      <article class="slide" data-type="photo" data-idx="${idx}">
-        <div class="photo" style="width:min(calc(${it.size}*86vw), 980px);">
-          <img src="${it.src}" alt="photo${idx+1}">
-          <span class="frame"></span>
-        </div>
-      </article>
-    `;
-
-    slidesEl.innerHTML = [
-      createCoverSlide(),
-      ...images.map((it, i) => createPhotoSlide(it, i))
-    ].join('');
-
-    const total = images.length + 1; // 표지 포함
-    let index = 0; // 0 = 표지
-    counterEl.textContent = `${index+1} / ${total}`;
-
-    /* ===== 배경 크로스페이드 (현재 슬라이드에 맞춰) ===== */
-    let bgShowing = 0;
-
-    function setBgFor(index){
-      const pick = backgrounds[index % backgrounds.length];
-      if(bgShowing === 0){
-        bg2.style.backgroundImage = `url(${pick})`;
-        bg2.classList.add('show'); bg1.classList.remove('show'); bgShowing = 1;
-      } else {
-        bg1.style.backgroundImage = `url(${pick})`;
-        bg1.classList.add('show'); bg2.classList.remove('show'); bgShowing = 0;
+    /* 페이지 배경 크로스페이드(타이머 유지) */
+    const bg1=document.getElementById('bg1'), bg2=document.getElementById('bg2');
+    let bgIndex=1, bgShowing=0;
+    const applyBg=()=>{
+      const next=backgrounds[bgIndex%backgrounds.length];
+      if(bgShowing===0){
+        bg2.style.backgroundImage=`url(${next})`;
+        bg2.classList.add('show'); bg1.classList.remove('show'); bgShowing=1;
+      }else{
+        bg1.style.backgroundImage=`url(${next})`;
+        bg1.classList.add('show'); bg2.classList.remove('show'); bgShowing=0;
       }
-    }
-
-    // 초기 배경
-    bg1.style.backgroundImage = `url(${backgrounds[0]})`;
+      bgIndex++;
+    };
+    bg1.style.backgroundImage=`url(${backgrounds[0]})`;
     bg1.classList.add('show');
+    setInterval(applyBg, 10000);
 
-    function snap(){
-      slidesEl.style.transform = `translateX(-${index * 100}vw)`;
-      counterEl.textContent = `${index+1} / ${total}`;
-      setBgFor(index);
-    }
+    /* 카드 DOM 생성: 기존 기울기/사이즈/프레임 유지 */
+    const album=document.getElementById('album');
+    album.innerHTML=images.map((it,idx)=>{
+      const rot=(idx%2===0?'-':'') + '17deg';
+      const bgurl=backgrounds[idx%backgrounds.length];
+      return `
+        <article class="card" data-idx="${idx}">
+          <div class="cardBox" style="--bgimg:url('${bgurl}')">
+            <div class="photoWrap" style="--rot:${rot}; --size:${it.size}">
+              <img src="${it.src}" alt="photo${idx+1}">
+              <span class="frame"></span>
+            </div>
+          </div>
+        </article>`;
+    }).join('');
 
-    /* ===== 스와이프 / 드래그 ===== */
-    let startX = 0, curX = 0, dragging = false, moved = false;
+    /* ===== 가로 드래그 슬라이드(세로 스크롤 대체) ===== */
+    let index=0;                      // 현재 카드 인덱스(0 ~ images.length-1)
+    const total=images.length;
 
-    const onStart = (x) => {
-      dragging = true; moved = false;
-      startX = curX = x;
-      document.body.classList.add('grabbing');
+    const snap=()=>{
+      album.style.transform=`translateX(-${index*100}vw)`;
     };
-    const onMove = (x) => {
+    snap();
+
+    let startX=0, curX=0, dragging=false;
+    const threshold = () => Math.min(80, window.innerWidth*0.18);
+
+    const startDrag = (x)=>{ dragging=true; startX=curX=x; document.body.classList.add('dragging'); };
+    const moveDrag  = (x)=>{
       if(!dragging) return;
-      const dx = x - startX;
-      if(Math.abs(dx) > 3) moved = true;
-      // 현재 위치 + 드래그 변위 반영
-      slidesEl.style.transform = `translateX(calc(-${index*100}vw + ${dx}px))`;
-    };
-    const onEnd = () => {
-      if(!dragging) return;
+      curX=x;
       const dx = curX - startX;
-      dragging = false;
-      document.body.classList.remove('grabbing');
-
-      const threshold = Math.min(80, window.innerWidth * 0.18); // 화면 폭의 18% 또는 80px
-      if(dx < -threshold && index < total-1) index++;
-      else if(dx > threshold && index > 0) index--;
+      album.style.transform = `translateX(calc(-${index*100}vw + ${dx}px))`;
+    };
+    const endDrag   = ()=>{
+      if(!dragging) return;
+      dragging=false; document.body.classList.remove('dragging');
+      const dx = curX - startX;
+      if(dx < -threshold() && index < total-1) index++;
+      else if(dx > threshold() && index > 0) index--;
       snap();
     };
 
     // 터치
-    slidesEl.addEventListener('touchstart', e => onStart(e.touches[0].clientX), {passive:true});
-    slidesEl.addEventListener('touchmove',  e => { curX = e.touches[0].clientX; onMove(curX); }, {passive:true});
-    slidesEl.addEventListener('touchend',   onEnd);
+    album.addEventListener('touchstart', e=> startDrag(e.touches[0].clientX), {passive:true});
+    album.addEventListener('touchmove',  e=> moveDrag(e.touches[0].clientX), {passive:true});
+    album.addEventListener('touchend',   endDrag);
 
     // 마우스
-    slidesEl.addEventListener('mousedown', e => onStart(e.clientX));
-    window.addEventListener('mousemove',   e => { if(dragging){ curX = e.clientX; onMove(curX); } });
-    window.addEventListener('mouseup',     onEnd);
+    album.addEventListener('mousedown', e=> startDrag(e.clientX));
+    window.addEventListener('mousemove', e=> moveDrag(e.clientX));
+    window.addEventListener('mouseup',   endDrag);
 
-    // 키보드(←/→)
+    // 키보드(옵션)
     window.addEventListener('keydown', e=>{
-      if(e.key === 'ArrowRight' && index < total-1){ index++; snap(); }
-      if(e.key === 'ArrowLeft'  && index > 0){ index--; snap(); }
+      if(e.key==='ArrowRight' && index<total-1){ index++; snap(); }
+      if(e.key==='ArrowLeft'  && index>0){ index--; snap(); }
     });
 
-    // 초기 스냅
-    snap();
+    /* ====== (선택) 카드 클릭 시 전체화면 뷰어 열기: 기존 기능 유지 ====== */
+    const viewer=document.getElementById('viewer'),
+          big=document.getElementById('big'),
+          counter=document.getElementById('counter'),
+          closeBtn=document.getElementById('closeBtn'),
+          zonePrev=document.getElementById('zonePrev'),
+          zoneNext=document.getElementById('zoneNext'),
+          imgWrap=document.getElementById('imgWrap');
 
-    /* ===== 성능: 이미지 프리로드(가벼운 선행 로딩) ===== */
-    [...images.slice(0,3)].forEach(it=>{
-      const i = new Image(); i.src = it.src;
+    let current=0, isOpen=false, scale=1;
+
+    const openViewer=i=>{ current=i; update(); viewer.classList.add('open'); document.body.classList.add('lock'); isOpen=true; };
+    const closeViewer=()=>{ viewer.classList.remove('open'); document.body.classList.remove('lock'); isOpen=false; scale=1; applyScale(); };
+    const update=()=>{ big.src=images[current].src; counter.textContent=`${current+1} / ${images.length}`; };
+    const go=d=>{ current=(current+d+images.length)%images.length; scale=1; applyScale(); update(); };
+    const applyScale=()=>{ big.style.transform=`translate(-50%,-50%) scale(${scale})`; };
+
+    album.addEventListener('click',e=>{
+      const c=e.target.closest('.card'); if(!c) return;
+      openViewer(+c.dataset.idx);
+    });
+    closeBtn.onclick=closeViewer;
+    zonePrev.onclick=()=>go(-1);
+    zoneNext.onclick=()=>go(1);
+
+    // 뷰어 스와이프(기존)
+    let swStartX=0, swLastX=0, swiping=false;
+    imgWrap.addEventListener('touchstart',e=>{
+      if(e.touches.length>1) return;
+      swStartX=swLastX=e.touches[0].clientX; swiping=true; viewer.classList.add('swiping');
+    },{passive:true});
+    imgWrap.addEventListener('touchmove',e=>{
+      if(!swiping) return;
+      const x=e.touches[0].clientX, dx=x-swStartX; swLastX=x;
+      big.style.transform=`translate(calc(-50% + ${dx}px), -50%) scale(${scale})`;
+    },{passive:true});
+    imgWrap.addEventListener('touchend',()=>{
+      if(!swiping) return;
+      const dx=swLastX-swStartX; viewer.classList.remove('swiping'); swiping=false;
+      big.style.transform=`translate(-50%,-50%) scale(${scale})`;
+      if(Math.abs(dx)>60) go(dx<0?1:-1);
     });
   </script>
 </body>
