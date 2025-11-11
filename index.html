@@ -36,8 +36,9 @@
     .album{
       display:flex;
       height:100vh;
-      transition:transform .6s ease;
+      transition:transform .55s cubic-bezier(.22,.61,.36,1); /* 더 부드러운 이징 */
       touch-action:pan-y;
+      will-change: transform; /* GPU 가속 힌트 */
     }
     .dragging .album{transition:none;}
     .card{
@@ -46,14 +47,13 @@
       position:relative;
     }
 
-    /* ===== 표지 (야경, 밝은 하단 강조) ===== */
+    /* ===== 표지 (야경, 하단 밝게) ===== */
     .card.cover{overflow:hidden;}
     .card.cover .coverBg{
       position:absolute;inset:0;
       background-image:url('fbg.jpg');
       background-size:cover;background-position:center;
-      /* 전체적으로 조금 더 밝고 선명하게 */
-      filter:blur(1.2px) brightness(.95) contrast(1.08) saturate(1.15);
+      filter:blur(2px) brightness(.95) contrast(1.08) saturate(1.15);
       transform:scale(1.03);
     }
     .card.cover .coverShade::before,
@@ -61,39 +61,25 @@
       content:"";position:absolute;inset:0;pointer-events:none;
     }
     .card.cover .coverShade::before{
-      /* 상단 어둡게, 하단은 살짝 밝게 */
       background:
         linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.35) 50%, rgba(255,220,140,.18) 100%);
       mix-blend-mode:overlay;
     }
     .card.cover .coverShade::after{
-      /* 하단쪽 따뜻한 빛 강조 */
       background:
         radial-gradient(60% 25% at 50% 95%, rgba(255,220,120,.3), transparent 70%);
       mix-blend-mode:screen;
     }
-
-    /* 글자 하단 정렬 */
     .card.cover .coverInner{
-      position:absolute;
-      bottom:8vh;
-      left:50%;
-      transform:translateX(-50%);
-      z-index:1;
-      text-align:center;
-      width:100%;
+      position:absolute;bottom:8vh;left:50%;transform:translateX(-50%);
+      z-index:1;text-align:center;width:100%;
     }
     .card.cover h2{
-      font-size:clamp(28px,7vw,54px);
-      font-weight:700;
-      color:#f7f8ff;
-      text-shadow:
-        0 2px 12px rgba(0,0,0,.6),
-        0 0 24px rgba(160,180,255,.25);
+      font-size:clamp(28px,7vw,54px);font-weight:700;color:#f7f8ff;
+      text-shadow:0 2px 12px rgba(0,0,0,.6), 0 0 24px rgba(160,180,255,.25);
     }
     .card.cover p{
-      margin-top:.7em;
-      color:#d9deff;opacity:.9;
+      margin-top:.7em;color:#d9deff;opacity:.9;
       text-shadow:0 2px 10px rgba(0,0,0,.45);
     }
 
@@ -124,6 +110,10 @@
       position:absolute;inset:-6px;border:2px solid rgba(255,255,255,.85);
       border-radius:16px;pointer-events:none;
     }
+
+    @media (prefers-reduced-motion: reduce){
+      .album, .bgwrap .bg { transition:none; }
+    }
   </style>
 </head>
 <body>
@@ -152,7 +142,7 @@
     ];
     const backgrounds = [...Array(8)].map((_,i)=>`bg${i+1}.jpg`);
 
-    /* ===== 배경 크로스페이드 ===== */
+    /* ===== 배경 크로스페이드(타이머 유지) ===== */
     const bg1=document.getElementById('bg1'), bg2=document.getElementById('bg2');
     let bgIndex=1, bgShowing=0;
     const applyBg=()=>{
@@ -197,30 +187,71 @@
     }).join('');
     album.innerHTML = cover + cards;
 
-    /* ===== 가로 드래그 슬라이드 ===== */
-    let index=0;
-    const total=images.length+1;
-    const snap=()=>album.style.transform=`translateX(-${index*100}vw)`;
-    snap();
-    let startX=0, curX=0, dragging=false;
-    const threshold=()=>Math.min(80,window.innerWidth*0.18);
+    /* ===== 가로 드래그 슬라이드 (smoother) ===== */
+    let index = 0;
+    const total = images.length + 1;
+    const albumEl = album;
 
-    const startDrag=x=>{dragging=true;startX=curX=x;document.body.classList.add('dragging');};
-    const moveDrag=x=>{if(!dragging)return;curX=x;const dx=curX-startX;
-      album.style.transform=`translateX(calc(-${index*100}vw + ${dx}px))`;};
-    const endDrag=()=>{if(!dragging)return;dragging=false;document.body.classList.remove('dragging');
-      const dx=curX-startX;
-      if(dx<-threshold()&&index<total-1)index++;
-      else if(dx>threshold()&&index>0)index--;
+    const snap = () => {
+      albumEl.style.transform = `translate3d(-${index * 100}vw, 0, 0)`; // GPU가속
+    };
+    snap();
+
+    let dragging = false;
+    let startX = 0, curX = 0, lastX = 0;
+    let startT = 0, lastT = 0;
+
+    const thresholdPx = () => Math.min(80, window.innerWidth * 0.18);
+
+    const onStart = (x) => {
+      dragging = true;
+      startX = curX = lastX = x;
+      startT = lastT = performance.now();
+      document.body.classList.add('dragging');
+    };
+
+    const onMove = (x) => {
+      if (!dragging) return;
+      curX = x;
+      const dx = curX - startX;
+      albumEl.style.transform = `translate3d(calc(-${index * 100}vw + ${dx}px), 0, 0)`;
+      lastX = curX;
+      lastT = performance.now();
+    };
+
+    const onEnd = () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.classList.remove('dragging');
+
+      const dxTotal = lastX - startX;
+      const dt = Math.max(1, lastT - startT);
+      const velocity = dxTotal / dt; // px/ms
+
+      const fast = Math.abs(velocity) > 0.6;   // 휙 넘김
+      const far  = Math.abs(dxTotal) > thresholdPx();
+
+      if ((dxTotal < 0 && (far || fast)) && index < total - 1) index++;
+      else if ((dxTotal > 0 && (far || fast)) && index > 0)    index--;
+
       snap();
     };
 
-    album.addEventListener('touchstart',e=>startDrag(e.touches[0].clientX),{passive:true});
-    album.addEventListener('touchmove',e=>moveDrag(e.touches[0].clientX),{passive:true});
-    album.addEventListener('touchend',endDrag);
-    album.addEventListener('mousedown',e=>startDrag(e.clientX));
-    window.addEventListener('mousemove',e=>moveDrag(e.clientX));
-    window.addEventListener('mouseup',endDrag);
+    /* 터치 */
+    albumEl.addEventListener('touchstart', e => onStart(e.touches[0].clientX), {passive:true});
+    albumEl.addEventListener('touchmove',  e => onMove(e.touches[0].clientX),  {passive:true});
+    albumEl.addEventListener('touchend',   onEnd);
+
+    /* 마우스 */
+    albumEl.addEventListener('mousedown', e => onStart(e.clientX));
+    window.addEventListener('mousemove',  e => onMove(e.clientX));
+    window.addEventListener('mouseup',    onEnd);
+
+    /* 키보드(옵션) */
+    window.addEventListener('keydown', e=>{
+      if(e.key==='ArrowRight' && index<total-1){ index++; snap(); }
+      if(e.key==='ArrowLeft'  && index>0){      index--; snap(); }
+    });
   </script>
 </body>
 </html>
