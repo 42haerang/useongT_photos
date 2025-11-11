@@ -46,13 +46,14 @@
       position:relative;
     }
 
-    /* ===== 표지 (야경, 블러 거의 없음 + 글자 아래로) ===== */
+    /* ===== 표지 (야경, 밝은 하단 강조) ===== */
     .card.cover{overflow:hidden;}
     .card.cover .coverBg{
       position:absolute;inset:0;
       background-image:url('fbg.jpg');
       background-size:cover;background-position:center;
-      filter:blur(2px) brightness(.8) saturate(1.05);
+      /* 전체적으로 조금 더 밝고 선명하게 */
+      filter:blur(2px) brightness(.95) contrast(1.08) saturate(1.15);
       transform:scale(1.03);
     }
     .card.cover .coverShade::before,
@@ -60,19 +61,22 @@
       content:"";position:absolute;inset:0;pointer-events:none;
     }
     .card.cover .coverShade::before{
+      /* 상단 어둡게, 하단은 살짝 밝게 */
       background:
-        linear-gradient(180deg, rgba(0,0,0,.4), rgba(0,0,0,.7) 90%);
+        linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.35) 50%, rgba(255,220,140,.18) 100%);
+      mix-blend-mode:overlay;
     }
     .card.cover .coverShade::after{
+      /* 하단쪽 따뜻한 빛 강조 */
       background:
-        radial-gradient(60% 30% at 50% 90%, rgba(255,200,80,.15), transparent 70%);
+        radial-gradient(60% 25% at 50% 95%, rgba(255,220,120,.3), transparent 70%);
       mix-blend-mode:screen;
     }
 
-    /* 표지 글자 하단 정렬 */
+    /* 글자 하단 정렬 */
     .card.cover .coverInner{
       position:absolute;
-      bottom:10vh; /* 화면 아래쪽으로 내림 */
+      bottom:8vh;
       left:50%;
       transform:translateX(-50%);
       z-index:1;
@@ -80,17 +84,17 @@
       width:100%;
     }
     .card.cover h2{
-      font-size:clamp(28px,7vw,52px);
+      font-size:clamp(28px,7vw,54px);
       font-weight:700;
-      color:#f6f7ff;
+      color:#f7f8ff;
       text-shadow:
-        0 2px 10px rgba(0,0,0,.6),
-        0 0 20px rgba(120,160,255,.25);
+        0 2px 12px rgba(0,0,0,.6),
+        0 0 24px rgba(160,180,255,.25);
     }
     .card.cover p{
       margin-top:.7em;
-      color:#cfd6ff;opacity:.85;
-      text-shadow:0 2px 8px rgba(0,0,0,.45);
+      color:#d9deff;opacity:.9;
+      text-shadow:0 2px 10px rgba(0,0,0,.45);
     }
 
     /* ===== 카드 (기울어진 사진 유지) ===== */
@@ -98,13 +102,13 @@
       position:relative;width:100%;height:100%;
       background-image:var(--bgimg);
       background-size:cover;background-position:center;
-      filter:brightness(.95) saturate(1.02);
+      filter:brightness(1) contrast(1.05) saturate(1.08);
     }
     .cardBox .bgTint{
       position:absolute;inset:0;pointer-events:none;
       background:
-        linear-gradient(180deg, rgba(0,0,0,.16), rgba(0,0,0,.28)),
-        radial-gradient(50% 40% at 50% 40%, rgba(0,0,0,.18), transparent 60%);
+        linear-gradient(180deg, rgba(0,0,0,.14), rgba(0,0,0,.25)),
+        radial-gradient(50% 40% at 50% 40%, rgba(0,0,0,.15), transparent 60%);
     }
     .photoWrap{
       position:absolute;left:50%;top:50%;
