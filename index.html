@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <title>느좋 송우성T 화보집</title>
 
+  <!-- 첫 사진만 선로딩 -->
+  <link rel="preload" as="image" href="01.jpg" imagesrcset="01.avif 1x, 01.webp 1x, 01.jpg 1x">
+
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{
@@ -12,14 +15,15 @@
       background:#0f0f10;color:#e9ecef;
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Pretendard,Arial,sans-serif;
       overflow:hidden;
+      overscroll-behavior:none;
     }
 
-    /* ===== 배경 크로스페이드 ===== */
+    /* ===== 배경 (타이머 삭제, 스냅 시만 변경) ===== */
     .bgwrap{position:fixed;inset:0;z-index:-1;}
     .bgwrap .bg{
       position:absolute;inset:0;
       background-size:cover;background-position:center;
-      opacity:0;transition:opacity 1.2s ease;
+      opacity:0;transition:opacity 800ms ease;
       filter:brightness(.9) contrast(1.03) saturate(1.02);
     }
     .bgwrap .bg.show{opacity:.9}
@@ -36,18 +40,19 @@
     .album{
       display:flex;
       height:100vh;
-      transition:transform .55s cubic-bezier(.22,.61,.36,1); /* 더 부드러운 이징 */
+      transition:transform .55s cubic-bezier(.22,.61,.36,1);
       touch-action:pan-y;
-      will-change: transform; /* GPU 가속 힌트 */
+      will-change: transform;
     }
     .dragging .album{transition:none;}
     .card{
-      flex:0 0 100vw;height:100vh;
-      display:flex;align-items:center;justify-content:center;
-      position:relative;
+      flex:0 0 100vw;height:100vh;display:flex;align-items:center;justify-content:center;position:relative;
+      /* 오프스크린 렌더링 건너뛰기 → 초기 페인트/JS 부담↓ */
+      content-visibility:auto;
+      contain-intrinsic-size: 100vh 100vw;
     }
 
-    /* ===== 표지 (야경, 하단 밝게) ===== */
+    /* ===== 표지 (야경) ===== */
     .card.cover{overflow:hidden;}
     .card.cover .coverBg{
       position:absolute;inset:0;
@@ -61,13 +66,11 @@
       content:"";position:absolute;inset:0;pointer-events:none;
     }
     .card.cover .coverShade::before{
-      background:
-        linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.35) 50%, rgba(255,220,140,.18) 100%);
+      background:linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.35) 50%, rgba(255,220,140,.18) 100%);
       mix-blend-mode:overlay;
     }
     .card.cover .coverShade::after{
-      background:
-        radial-gradient(60% 25% at 50% 95%, rgba(255,220,120,.3), transparent 70%);
+      background:radial-gradient(60% 25% at 50% 95%, rgba(255,220,120,.3), transparent 70%);
       mix-blend-mode:screen;
     }
     .card.cover .coverInner{
@@ -77,10 +80,6 @@
     .card.cover h2{
       font-size:clamp(28px,7vw,54px);font-weight:700;color:#f7f8ff;
       text-shadow:0 2px 12px rgba(0,0,0,.6), 0 0 24px rgba(160,180,255,.25);
-    }
-    .card.cover p{
-      margin-top:.7em;color:#d9deff;opacity:.9;
-      text-shadow:0 2px 10px rgba(0,0,0,.45);
     }
 
     /* ===== 카드 (기울어진 사진 유지) ===== */
@@ -142,49 +141,54 @@
     ];
     const backgrounds = [...Array(8)].map((_,i)=>`bg${i+1}.jpg`);
 
-    /* ===== 배경 크로스페이드(타이머 유지) ===== */
-    const bg1=document.getElementById('bg1'), bg2=document.getElementById('bg2');
-    let bgIndex=1, bgShowing=0;
-    const applyBg=()=>{
-      const next=backgrounds[bgIndex%backgrounds.length];
-      if(bgShowing===0){
-        bg2.style.backgroundImage=`url(${next})`;
-        bg2.classList.add('show'); bg1.classList.remove('show'); bgShowing=1;
-      }else{
-        bg1.style.backgroundImage=`url(${next})`;
-        bg1.classList.add('show'); bg2.classList.remove('show'); bgShowing=0;
-      }
-      bgIndex++;
-    };
-    bg1.style.backgroundImage=`url(${backgrounds[0]})`;
-    bg1.classList.add('show');
-    setInterval(applyBg, 10000);
+    /* ===== 표지 + 카드 생성 (이미지 지연 로딩) ===== */
+    const album = document.getElementById('album');
 
-    /* ===== 표지 + 카드 생성 ===== */
-    const album=document.getElementById('album');
-    const cover=`
-      <article class="card cover">
+    const cover = `
+      <article class="card cover" data-kind="cover">
         <div class="coverBg" aria-hidden="true"></div>
         <div class="coverShade" aria-hidden="true"></div>
         <div class="coverInner">
           <h2>느좋 송우성T 화보집</h2>
         </div>
       </article>`;
-    const cards=images.map((it,idx)=>{
+
+    const cards = images.map((it,idx)=>{
       const rot=(idx%2===0?'-':'')+'17deg';
       const bgurl=backgrounds[idx%backgrounds.length];
-      return`
-        <article class="card" data-idx="${idx}">
+      // 최초 로딩 부담↓: data-src 로 지연세팅, 첫 장만 즉시 로드
+      const isFirst = idx===0;
+      const imgAttrs = isFirst
+        ? `src="${it.src}" fetchpriority="high" decoding="async"`
+        : `data-src="${it.src}" loading="lazy" decoding="async" fetchpriority="low"`;
+      return `
+        <article class="card" data-kind="photo" data-idx="${idx}">
           <div class="cardBox" style="--bgimg:url('${bgurl}')">
             <span class="bgTint" aria-hidden="true"></span>
             <div class="photoWrap" style="--rot:${rot}; --size:${it.size}">
-              <img src="${it.src}" alt="photo${idx+1}">
+              <img ${imgAttrs} alt="photo${idx+1}">
               <span class="frame"></span>
             </div>
           </div>
         </article>`;
     }).join('');
+
     album.innerHTML = cover + cards;
+
+    /* ===== 배경: 슬라이드 이동 시에만 교체 ===== */
+    const bgA = document.getElementById('bg1');
+    const bgB = document.getElementById('bg2');
+    let bgShowing = 0;
+
+    function setBgByIndex(i){
+      const pick = backgrounds[i % backgrounds.length] || backgrounds[0];
+      const front = bgShowing ? bgA : bgB;
+      const back  = bgShowing ? bgB : bgA;
+      back.style.backgroundImage = `url(${pick})`;
+      back.classList.add('show');
+      front.classList.remove('show');
+      bgShowing ^= 1;
+    }
 
     /* ===== 가로 드래그 슬라이드 (smoother) ===== */
     let index = 0;
@@ -192,9 +196,27 @@
     const albumEl = album;
 
     const snap = () => {
-      albumEl.style.transform = `translate3d(-${index * 100}vw, 0, 0)`; // GPU가속
+      albumEl.style.transform = `translate3d(-${index * 100}vw, 0, 0)`;
+      // 현재 인덱스 기준 배경/이미지 프리로드
+      setBgByIndex(Math.max(0, index-1)); // 표지일 때도 안전
+      preloadSlide(index);
+      preloadSlide(index+1);
+      preloadSlide(index-1);
     };
+    // 초기 상태
+    setBgByIndex(0);
     snap();
+
+    // 지연 로딩: 해당 슬라이드의 <img>가 data-src면 실제 src로 교체
+    function preloadSlide(i){
+      const card = albumEl.children[i];
+      if(!card) return;
+      const img = card.querySelector('img[data-src]');
+      if(img){
+        img.src = img.dataset.src;
+        img.removeAttribute('data-src');
+      }
+    }
 
     let dragging = false;
     let startX = 0, curX = 0, lastX = 0;
@@ -227,7 +249,7 @@
       const dt = Math.max(1, lastT - startT);
       const velocity = dxTotal / dt; // px/ms
 
-      const fast = Math.abs(velocity) > 0.6;   // 휙 넘김
+      const fast = Math.abs(velocity) > 0.6;
       const far  = Math.abs(dxTotal) > thresholdPx();
 
       if ((dxTotal < 0 && (far || fast)) && index < total - 1) index++;
@@ -250,6 +272,12 @@
     window.addEventListener('keydown', e=>{
       if(e.key==='ArrowRight' && index<total-1){ index++; snap(); }
       if(e.key==='ArrowLeft'  && index>0){      index--; snap(); }
+    });
+
+    /* 유휴 시간에 추가 프리로드(브라우저 지원 시) */
+    (window.requestIdleCallback || function(fn){setTimeout(fn,500)})(()=>{
+      preloadSlide(2);
+      preloadSlide(3);
     });
   </script>
 </body>
