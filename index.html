@@ -46,13 +46,13 @@
       position:relative;
     }
 
-    /* ===== 표지 (야경) ===== */
+    /* ===== 표지 (야경, 블러 줄임) ===== */
     .card.cover{overflow:hidden;}
     .card.cover .coverBg{
       position:absolute;inset:0;
       background-image:url('fbg.jpg');
       background-size:cover;background-position:center;
-      filter:blur(12px) brightness(.70) saturate(1.08) hue-rotate(-6deg);
+      filter:blur(6px) brightness(.75) saturate(1.08) hue-rotate(-6deg);
       transform:scale(1.08);
     }
     .card.cover .coverShade::before,
@@ -61,13 +61,13 @@
     }
     .card.cover .coverShade::before{
       background:
-        linear-gradient(180deg, rgba(0,0,0,.48), rgba(0,0,0,.62)),
-        linear-gradient(90deg, rgba(0,24,64,.18), transparent 60%);
+        linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.60)),
+        linear-gradient(90deg, rgba(0,24,64,.15), transparent 60%);
     }
     .card.cover .coverShade::after{
       background:
-        radial-gradient(60% 35% at 50% 85%, rgba(255,200,80,.22), transparent 65%),
-        radial-gradient(30% 20% at 50% 90%, rgba(255,160,60,.18), transparent 70%);
+        radial-gradient(60% 35% at 50% 85%, rgba(255,200,80,.18), transparent 65%),
+        radial-gradient(30% 20% at 50% 90%, rgba(255,160,60,.15), transparent 70%);
       mix-blend-mode:screen;
     }
     .card.cover .coverInner{
