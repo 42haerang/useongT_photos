@@ -46,14 +46,14 @@
       position:relative;
     }
 
-    /* ===== 표지 (야경, 블러 줄임) ===== */
+    /* ===== 표지 (야경, 블러 거의 없음 + 글자 아래로) ===== */
     .card.cover{overflow:hidden;}
     .card.cover .coverBg{
       position:absolute;inset:0;
       background-image:url('fbg.jpg');
       background-size:cover;background-position:center;
-      filter:blur(6px) brightness(.75) saturate(1.08) hue-rotate(-6deg);
-      transform:scale(1.08);
+      filter:blur(2px) brightness(.8) saturate(1.05);
+      transform:scale(1.03);
     }
     .card.cover .coverShade::before,
     .card.cover .coverShade::after{
@@ -61,29 +61,36 @@
     }
     .card.cover .coverShade::before{
       background:
-        linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.60)),
-        linear-gradient(90deg, rgba(0,24,64,.15), transparent 60%);
+        linear-gradient(180deg, rgba(0,0,0,.4), rgba(0,0,0,.7) 90%);
     }
     .card.cover .coverShade::after{
       background:
-        radial-gradient(60% 35% at 50% 85%, rgba(255,200,80,.18), transparent 65%),
-        radial-gradient(30% 20% at 50% 90%, rgba(255,160,60,.15), transparent 70%);
+        radial-gradient(60% 30% at 50% 90%, rgba(255,200,80,.15), transparent 70%);
       mix-blend-mode:screen;
     }
+
+    /* 표지 글자 하단 정렬 */
     .card.cover .coverInner{
-      position:relative;z-index:1;text-align:center;padding:0 6vw;
+      position:absolute;
+      bottom:10vh; /* 화면 아래쪽으로 내림 */
+      left:50%;
+      transform:translateX(-50%);
+      z-index:1;
+      text-align:center;
+      width:100%;
     }
     .card.cover h2{
-      font-size:clamp(30px,7vw,54px);
-      letter-spacing:1.5px;font-weight:700;
-      color:#f4f7ff;
+      font-size:clamp(28px,7vw,52px);
+      font-weight:700;
+      color:#f6f7ff;
       text-shadow:
-        0 2px 12px rgba(0,0,0,.55),
-        0 0 22px rgba(120,160,255,.25);
+        0 2px 10px rgba(0,0,0,.6),
+        0 0 20px rgba(120,160,255,.25);
     }
     .card.cover p{
-      margin-top:.8em;color:#cfd6ff;opacity:.85;
-      text-shadow:0 2px 10px rgba(0,0,0,.45);
+      margin-top:.7em;
+      color:#cfd6ff;opacity:.85;
+      text-shadow:0 2px 8px rgba(0,0,0,.45);
     }
 
     /* ===== 카드 (기울어진 사진 유지) ===== */
@@ -166,7 +173,8 @@
         <div class="coverBg" aria-hidden="true"></div>
         <div class="coverShade" aria-hidden="true"></div>
         <div class="coverInner">
-          <h2>느좋 송우성T 화보집</h2> 
+          <h2>느좋 송우성T 화보집</h2>
+          <p>한 장씩 넘겨보는 슬라이드북</p>
         </div>
       </article>`;
     const cards=images.map((it,idx)=>{
